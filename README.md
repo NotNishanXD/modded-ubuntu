@@ -89,11 +89,12 @@ Full Credit of the Ubuntu image goes to them .
 Termux Proot Distro - https://github.com/termux/proot-distro
 ```
 
-### Maintainers
+### Maintainers (Full credits to them I just made some modifications)
 
 - [**Mustakim Ahmed**](https://github.com/BDhackers009)
 - [**Tahmid Rayat**](https://github.com/htr-tech)
 - [**0xBaryonyx**](https://github.com/Mahfuz-THBD)
+- [**NotNishanXD**](https://github.com/NotNishanXD)
 
 
 ### If you like our work then dont forget to give a Star :)
