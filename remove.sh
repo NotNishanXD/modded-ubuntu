@@ -1,32 +1,53 @@
 #!/bin/bash
+set -e
 
-R="$(printf '\033[1;31m')"
-G="$(printf '\033[1;32m')"
-Y="$(printf '\033[1;33m')"
-B="$(printf '\033[1;34m')"
-C="$(printf '\033[1;36m')"
-W="$(printf '\033[1;37m')"
+# Colors
+R='\033[1;31m'; G='\033[1;32m'; Y='\033[1;33m'
+C='\033[1;36m'; W='\033[1;37m'
 
 banner() {
     clear
-    printf "\033[33m    _  _ ___  _  _ _  _ ___ _  _    _  _ ____ ___  \033[0m\n"
-    printf "\033[36m    |  | |__] |  | |\ |  |  |  |    |\/| |  | |  \ \033[0m\n"
-    printf "\033[32m    |__| |__] |__| | \|  |  |__|    |  | |__| |__/ \033[0m\n"
-    printf "\033[0m\n"
-    printf "     \033[32mA modded gui version of ubuntu for Termux\033[0m\n"
-    printf "\033[0m\n"
+    cat <<- EOF
+${Y}    _  _ ___  _  _ _  _ ___ _  _    _  _ ____ ___  
+${C}    |  | |__] |  | |\ |  |  |  |    |\/| |  | |  \ 
+${G}    |__| |__] |__| | \|  |  |__|    |  | |__| |__/ 
 
+${G}     Modded Ubuntu V2 Remover${W}
+
+EOF
 }
 
-package() {
-    echo -e "${R} [${W}-${R}]${C} Purging packages..."${W}
-    proot-distro remove ubuntu && proot-distro clear-cache
-    rm -rf $PREFIX/bin/ubuntu
-    sed -i '/pulseaudio --start --exit-idle-time=-1/d' ~/.sound
-    sed -i '/pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1/d' ~/.sound
-    echo -e "${R} [${W}-${R}]${C} Purging Completed !"${W}
+log() { echo -e "${R}[${W}-${R}]${C} $1${W}"; }
+ok()  { echo -e "${R}[${W}-${R}]${G} $1${W}"; }
 
+remove_distro() {
+    log "Removing Ubuntu distro..."
+
+    if proot-distro list | grep -q ubuntu; then
+        proot-distro remove ubuntu
+        proot-distro clear-cache
+        ok "Ubuntu removed"
+    else
+        log "Ubuntu not found"
+    fi
+}
+
+cleanup_termux() {
+    log "Cleaning Termux files..."
+
+    rm -f "$PREFIX/bin/ubuntu"
+
+    if [ -f "$HOME/.sound" ]; then
+        sed -i '/pulseaudio --start/d' "$HOME/.sound"
+        sed -i '/module-aaudio-sink/d' "$HOME/.sound"
+        sed -i '/module-native-protocol-tcp/d' "$HOME/.sound"
+    fi
+
+    ok "Cleanup done"
 }
 
 banner
-package
+remove_distro
+cleanup_termux
+
+echo -e "\n${G}Everything removed successfully${W}"
