@@ -1,2 +1,15 @@
 #!/usr/bin/env bash
-dbus-launch vncserver -geometry 1440x720 -depth 24 -zliblevel 0 -name modded-ubuntu -xstartup /usr/bin/xfce4-session
+
+export DISPLAY=:1
+
+if pgrep Xtigervnc > /dev/null; then
+    echo "[!] VNC already running"
+    exit 1
+fi
+
+echo "[*] Starting VNC server..."
+
+dbus-launch --exit-with-session \
+vncserver :1 -geometry 1280x720 -depth 24 -localhost no
+
+echo "[✓] VNC started on :1"
