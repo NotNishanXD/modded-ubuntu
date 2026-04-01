@@ -1,137 +1,107 @@
 #!/bin/bash
+set -e
 
-R="$(printf '\033[1;31m')"
-G="$(printf '\033[1;32m')"
-Y="$(printf '\033[1;33m')"
-B="$(printf '\033[1;34m')"
-C="$(printf '\033[1;36m')"
-W="$(printf '\033[1;37m')" 
+# Colors
+R='\033[1;31m'; G='\033[1;32m'; Y='\033[1;33m'
+C='\033[1;36m'; W='\033[1;37m'
 
-CURR_DIR=$(realpath "$(dirname "$BASH_SOURCE")")
+CURR_DIR="$(cd "$(dirname "$0")" && pwd)"
 UBUNTU_DIR="$PREFIX/var/lib/proot-distro/installed-rootfs/ubuntu"
 
 banner() {
-	clear
-	cat <<- EOF
-		${Y}    _  _ ___  _  _ _  _ ___ _  _    _  _ ____ ___  
-		${C}    |  | |__] |  | |\ |  |  |  |    |\/| |  | |  \ 
-		${G}    |__| |__] |__| | \|  |  |__|    |  | |__| |__/ 
+    clear
+    cat <<- EOF
+${Y}    _  _ ___  _  _ _  _ ___ _  _    _  _ ____ ___  
+${C}    |  | |__] |  | |\ |  |  |  |    |\/| |  | |  \ 
+${G}    |__| |__] |__| | \|  |  |__|    |  | |__| |__/ 
 
-	EOF
-	echo -e "${G}     A modded gui version of ubuntu for Termux\n\n"${W}
+${G}     Modded Ubuntu V2 Installer${W}
+
+EOF
 }
 
-package() {
-	banner
-	echo -e "${R} [${W}-${R}]${C} Checking required packages..."${W}
-	
-	[ ! -d '/data/data/com.termux/files/home/storage' ] && echo -e "${R} [${W}-${R}]${C} Setting up Storage.."${W} && termux-setup-storage
+log() { echo -e "${R}[${W}-${R}]${C} $1${W}"; }
+ok()  { echo -e "${R}[${W}-${R}]${G} $1${W}"; }
 
-	if [[ $(command -v pulseaudio) && $(command -v proot-distro) ]]; then
-		echo -e "\n${R} [${W}-${R}]${G} Packages already installed."${W}
-	else
-		yes | pkg upgrade
-		packs=(pulseaudio proot-distro)
-		for x in "${packs[@]}"; do
-			type -p "$x" &>/dev/null || {
-				echo -e "\n${R} [${W}-${R}]${G} Installing package : ${Y}$x${C}"${W}
-				yes | pkg install "$x"
-			}
-		done
-	fi
+package() {
+    banner
+    log "Checking required packages..."
+
+    # Storage setup
+    [ ! -d "$HOME/storage" ] && termux-setup-storage
+
+    pkg update -y
+    pkg upgrade -y
+    pkg install -y pulseaudio proot-distro curl
+
+    ok "Packages ready"
 }
 
 distro() {
-	echo -e "\n${R} [${W}-${R}]${C} Checking for Distro..."${W}
-	termux-reload-settings
-	
-	if [[ -d "$UBUNTU_DIR" ]]; then
-		echo -e "\n${R} [${W}-${R}]${G} Distro already installed."${W}
-		exit 0
-	else
-		proot-distro install ubuntu
-		termux-reload-settings
-	fi
-	
-	if [[ -d "$UBUNTU_DIR" ]]; then
-		echo -e "\n${R} [${W}-${R}]${G} Installed Successfully !!"${W}
-	else
-		echo -e "\n${R} [${W}-${R}]${G} Error Installing Distro !\n"${W}
-		exit 0
-	fi
+    log "Checking Ubuntu distro..."
+
+    if [ -d "$UBUNTU_DIR" ]; then
+        ok "Ubuntu already installed"
+        return
+    fi
+
+    proot-distro install ubuntu
+
+    [ -d "$UBUNTU_DIR" ] && ok "Ubuntu installed successfully" || {
+        log "Failed to install Ubuntu"
+        exit 1
+    }
 }
 
 sound() {
-	echo -e "\n${R} [${W}-${R}]${C} Fixing Sound Problem..."${W}
-	[ ! -e "$HOME/.sound" ] && touch "$HOME/.sound"
-	echo "pacmd load-module module-aaudio-sink" >> "$HOME/.sound"
-        echo "pulseaudio --start --exit-idle-time=-1" >> "$HOME/.sound"
-	echo "pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" >> "$HOME/.sound"
-}
+    log "Fixing sound..."
 
-downloader(){
-	path="$1"
-	[ -e "$path" ] && rm -rf "$path"
-	echo "Downloading $(basename $1)..."
-	curl --progress-bar --insecure --fail \
-		 --retry-connrefused --retry 3 --retry-delay 2 \
-		  --location --output ${path} "$2"
-	echo
+    cat > "$HOME/.sound" <<EOF
+pulseaudio --start --exit-idle-time=-1
+pacmd load-module module-aaudio-sink
+pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1
+EOF
 }
 
 setup_vnc() {
-	if [[ -d "$CURR_DIR/distro" ]] && [[ -e "$CURR_DIR/distro/vncstart" ]]; then
-		cp -f "$CURR_DIR/distro/vncstart" "$UBUNTU_DIR/usr/local/bin/vncstart"
-	else
-		downloader "$CURR_DIR/vncstart" "https://raw.githubusercontent.com/modded-ubuntu/modded-ubuntu/master/distro/vncstart"
-		mv -f "$CURR_DIR/vncstart" "$UBUNTU_DIR/usr/local/bin/vncstart"
-	fi
+    log "Setting up VNC scripts..."
 
-	if [[ -d "$CURR_DIR/distro" ]] && [[ -e "$CURR_DIR/distro/vncstop" ]]; then
-		cp -f "$CURR_DIR/distro/vncstop" "$UBUNTU_DIR/usr/local/bin/vncstop"
-	else
-		downloader "$CURR_DIR/vncstop" "https://raw.githubusercontent.com/modded-ubuntu/modded-ubuntu/master/distro/vncstop"
-		mv -f "$CURR_DIR/vncstop" "$UBUNTU_DIR/usr/local/bin/vncstop"
-	fi
-	chmod +x "$UBUNTU_DIR/usr/local/bin/vncstart"
-	chmod +x "$UBUNTU_DIR/usr/local/bin/vncstop"
+    install -Dm755 "$CURR_DIR/distro/vncstart" "$UBUNTU_DIR/usr/local/bin/vncstart"
+    install -Dm755 "$CURR_DIR/distro/vncstop" "$UBUNTU_DIR/usr/local/bin/vncstop"
 }
 
 permission() {
-	banner
-	echo -e "${R} [${W}-${R}]${C} Setting up Environment..."${W}
+    banner
+    log "Setting up environment..."
 
-	if [[ -d "$CURR_DIR/distro" ]] && [[ -e "$CURR_DIR/distro/user.sh" ]]; then
-		cp -f "$CURR_DIR/distro/user.sh" "$UBUNTU_DIR/root/user.sh"
-	else
-		downloader "$CURR_DIR/user.sh" "https://raw.githubusercontent.com/modded-ubuntu/modded-ubuntu/master/distro/user.sh"
-		mv -f "$CURR_DIR/user.sh" "$UBUNTU_DIR/root/user.sh"
-	fi
-	chmod +x $UBUNTU_DIR/root/user.sh
+    install -Dm755 "$CURR_DIR/distro/user.sh" "$UBUNTU_DIR/root/user.sh"
 
-	setup_vnc
-	echo "$(getprop persist.sys.timezone)" > $UBUNTU_DIR/etc/timezone
-	echo "proot-distro login ubuntu" > $PREFIX/bin/ubuntu
-	chmod +x "$PREFIX/bin/ubuntu"
-	termux-reload-settings
+    setup_vnc
 
-	if [[ -e "$PREFIX/bin/ubuntu" ]]; then
-		banner
-		cat <<- EOF
-			${R} [${W}-${R}]${G} Ubuntu-22.04 (CLI) is now Installed on your Termux
-			${R} [${W}-${R}]${G} Restart your Termux to Prevent Some Issues.
-			${R} [${W}-${R}]${G} Type ${C}ubuntu${G} to run Ubuntu CLI.
-			${R} [${W}-${R}]${G} If you Want to Use UBUNTU in GUI MODE then ,
-			${R} [${W}-${R}]${G} Run ${C}ubuntu${G} first & then type ${C}bash user.sh${W}
-		EOF
-		{ echo; sleep 2; exit 1; }
-	else
-		echo -e "\n${R} [${W}-${R}]${G} Error Installing Distro !"${W}
-		exit 0
-	fi
+    # Timezone
+    getprop persist.sys.timezone > "$UBUNTU_DIR/etc/timezone"
 
+    # Ubuntu launcher
+    cat > "$PREFIX/bin/ubuntu" <<EOF
+proot-distro login ubuntu
+EOF
+    chmod +x "$PREFIX/bin/ubuntu"
+
+    ok "Installation complete!"
+
+    cat <<- EOF
+
+${G}Ubuntu (CLI) installed successfully
+${C}Restart Termux (important)
+
+Then run:
+  ubuntu
+  bash user.sh
+
+EOF
 }
 
+# Run
 package
 distro
 sound
