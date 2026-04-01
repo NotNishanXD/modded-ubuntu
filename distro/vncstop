@@ -2,10 +2,15 @@
 
 echo "[*] Stopping VNC server..."
 
-vncserver -kill :1 2>/dev/null || echo "[!] No active VNC session"
+if vncserver -list | grep -q ":1"; then
+    vncserver -kill :1
+else
+    echo "[!] No active VNC session"
+fi
 
-rm -rf "$HOME/.vnc/*.pid" 2>/dev/null
-rm -rf /tmp/.X1-lock 2>/dev/null
+# Clean leftovers
+rm -f $HOME/.vnc/*.pid 2>/dev/null
+rm -f /tmp/.X1-lock 2>/dev/null
 rm -rf /tmp/.X11-unix/X1 2>/dev/null
 
 echo "[✓] VNC stopped"
