@@ -2,17 +2,22 @@
 Name=Visual Studio Code
 Comment=Code Editing. Redefined.
 GenericName=Text Editor
-Exec=/usr/share/code/code --no-sandbox  --unity-launch %F
-Icon=com.visualstudio.code
+
+Exec=code --no-sandbox --disable-gpu --unity-launch %F
+Terminal=false
 Type=Application
-StartupNotify=false
+
+Icon=com.visualstudio.code
+StartupNotify=true
 StartupWMClass=Code
+
 Categories=TextEditor;Development;IDE;
 MimeType=text/plain;inode/directory;application/x-code-workspace;
+
 Actions=new-empty-window;
-Keywords=vscode;
+Keywords=vscode;code;editor;
 
 [Desktop Action new-empty-window]
 Name=New Empty Window
-Exec=/usr/share/code/code  --no-sandbox --new-window %F
+Exec=code --no-sandbox --disable-gpu --new-window %F
 Icon=com.visualstudio.code
