@@ -2,14 +2,21 @@
 
 export DISPLAY=:1
 
-if pgrep Xtigervnc > /dev/null; then
+if pgrep Xtigervnc >/dev/null; then
     echo "[!] VNC already running"
     exit 1
 fi
 
 echo "[*] Starting VNC server..."
 
-dbus-launch --exit-with-session \
-vncserver :1 -geometry 1280x720 -depth 24 -localhost no
+# Clean old locks (prevents crash issues)
+rm -rf /tmp/.X1-lock /tmp/.X11-unix/X1 2>/dev/null
 
-echo "[✓] VNC started on :1"
+# Start VNC with XFCE
+vncserver :1 \
+-geometry 1280x720 \
+-depth 16 \
+-localhost yes \
+-xstartup /usr/bin/xfce4-session
+
+echo "[✓] VNC started on localhost:1"
