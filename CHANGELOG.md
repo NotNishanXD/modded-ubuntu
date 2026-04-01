@@ -1,31 +1,35 @@
 Changelog
 
-[2.0.1] - 2026-04-01
+[2.1.0] - 2026-04-01
 
 ✨ Added
 
-- Added selectable options for browser, IDE, and media player (reduces storage usage)
-- Improved overall code optimization
-- Enhanced system stability
-- Added Breeze Hacked cursor theme
-- Added Kora icon theme
-- Included custom UI configuration (pre-configured desktop look)
-- Added new wallpapers
-- Included Nerd Fonts support
-- Various other minor improvements
+- Added optimized "setup.sh" with faster and cleaner installation flow
+- Added improved VNC startup script with better stability
+- Added automatic cleanup for stale VNC locks and sessions
+- Added safer environment setup and launcher handling
+- Improved sound configuration with duplicate prevention
 
 🔄 Changed
 
-- Improved installer UI (minor redesign)
-- Updated default wallpaper
-- Updated default font
-- Updated default theme
+- Refactored installer scripts for better performance and readability
+- Reduced redundant package updates and installs
+- Improved VNC configuration (resolution, depth, and startup handling)
+- Updated default behavior to prevent unnecessary reinstallation
+- Cleaned overall script structure for maintainability
 
 🐛 Fixed
 
-- Fixed Firefox installation (new installer method)
-- Fixed repository-related errors
-- Multiple minor bug fixes and improvements
+- Fixed VNC PID cleanup issue (wildcard bug)
+- Fixed incorrect VNC stop script behavior
+- Fixed potential “VNC already running” false errors
+- Fixed duplicate entries in sound configuration
+- Fixed minor path and permission issues
+
+🔒 Security
+
+- Restricted VNC server to localhost by default
+- Prevented unintended network exposure
 
 ---
 
